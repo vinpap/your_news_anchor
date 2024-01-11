@@ -1,0 +1,43 @@
+FRANÇAIS
+
+France Info : https://www.france24.com/fr/rss
+OK
+
+Le Monde : https://www.lemonde.fr/rss/une.xml
+OK
+
+L'équipe : https://dwh.lequipe.fr/api/edito/rss?path=/
+FAIL, la plupart des articles ne sont pas pris en compte (contenu mal détecté)
+
+Le Figaro : https://www.lefigaro.fr/rss/figaro_actualites.xml
+OK (beaucoup d'articles réservés aux abonnés tronqués)
+
+Google News : https://news.google.com/rss?hl=fr&gl=FR&ceid=FR:fr
+OK
+
+
+Liste de flux RSS standards :
+- https://www.france24.com/fr/rss
+- https://www.lemonde.fr/rss/une.xml
+- https://news.google.com/rss?hl=fr&gl=FR&ceid=FR:fr
+- https://www.ouest-france.fr/rss/france
+- https://www.francetvinfo.fr/monde.rss
+- https://www.20minutes.fr/feeds/rss-monde.xml
+
+ANGLAIS
+
+BBC World : https://feeds.bbci.co.uk/news/world/rss.xml
+FAIL, prend une petite partie des articles seulement
+
+Independent : https://www.independent.co.uk/news/world/rss
+OK
+
+Al-Jazeera : https://rss.app/feeds/D0SUH2NYYoOzypYN.xml
+OK
+
+Huffington Post : https://www.huffpost.com/section/world-news/feed
+OK (mais bandeau d'appels aux donc considéré comme un article)
+
+Google News : https://news.google.com/rss
+OK
+
