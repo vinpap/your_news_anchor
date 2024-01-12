@@ -1,2 +1,0 @@
-sources_api: "MONAPI.COM" # The endpoint where the database API is located
-max_articles_per_source: 30 # The max number of articles to scrap from a given source

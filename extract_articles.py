@@ -4,12 +4,13 @@ saves them using a provided API.
 """
 import logging
 
+import requests
 import feedparser
 import newspaper
 import yaml
 
 
-def parse_rss_feed(feed_path: str, articles_max_count=10) -> list:
+def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_max_count=10) -> list:
     """
     Retrieves the RSS feed located at feed_path and returns a dictionary that
     contains the n first articles along with their URL and their title.
@@ -21,6 +22,8 @@ def parse_rss_feed(feed_path: str, articles_max_count=10) -> list:
     Returns a list of dictionaries that include the following elements:
     'title': title of the article
     'content': content of the article
+    'source': the name of the website the news originate from (equal to 
+    'source_name')
     'url': the URL where the article can be found.
     """
     articles = []
@@ -30,7 +33,9 @@ def parse_rss_feed(feed_path: str, articles_max_count=10) -> list:
     for item in news_feed.entries:
         article_data = {
             "title": item.title,
-            "url": item.link
+            "url": item.link,
+            "source": source_name,
+            "source_id": source_id
         }
         try:
             article_data["content"] = parse_article_webpage(item.link)
@@ -82,11 +87,13 @@ def content_is_relevant(article: str) -> bool:
     # Ajouter un moyen de filtrer les articles réservés aux abonnés, si nécessaire
 
 
-def get_sources_list() -> list:
+def get_sources_list(endpoint: str) -> list:
     """
     Returns the list of RSS feeds to get articles from in the database.
     """
-    return
+    logging.getLogger().info("Retrieving RSS feeds list from API endpoint")
+    sources = requests.get(endpoint)
+    return sources.json()
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -95,41 +102,25 @@ if __name__ == "__main__":
     logger.info("Starting news articles extraction...")
     config = yaml.safe_load(open("./config.yml"))
 
-    logger.info(f"""Database API endpoint: {config["sources_api"]}""")
+    logger.info(f"""Database API endpoint: {config["api"]}""")
     logger.info(f"""Max number of articles to scrap per source: {config["max_articles_per_source"]}""")
 
-    # Récupérer la liste des sources (standard et custom) via l'API
-    # Liste de sources à utiliser juste pour les tests (à supprimer plus tard) 
-    rss_sources = [
-        "https://www.france24.com/fr/rss",
-        "https://www.lemonde.fr/rss/une.xml",
-        "https://news.google.com/rss?hl=fr&gl=FR&ceid=FR:fr",
-        "https://www.ouest-france.fr/rss/france",
-        "https://www.francetvinfo.fr/monde.rss",
-        "https://www.20minutes.fr/feeds/rss-monde.xml",
-        "https://feeds.leparisien.fr/leparisien/rss",
-        "https://rmc.bfmtv.com/rss/actualites/",
-        "https://www.ladepeche.fr/rss.xml"
-    ]
-
+    # Retrieving the list of RSS feeds from the API
+    rss_sources = get_sources_list(config["api"] + "/feeds")
 
     scraped_articles = []
 
     for source in rss_sources:
-        logger.info(f"""Extracting articles from RSS feed {source}""")
-        results = parse_rss_feed(source, articles_max_count=config["max_articles_per_source"])
+        logger.info(f"""Extracting articles from RSS feed {source["url"]}""")
+        results = parse_rss_feed(source_id=source["source_id"], source_name=source["name"], feed_path=source["url"], articles_max_count=config["max_articles_per_source"])
         scraped_articles.extend(results)
     
     logger.info("Articles extraction complete!")
 
     logger.info("Saving all articles...")
-    # Enregistrer tous les articles dans la BDD via l'API
-    logger.info("Save complete!")
+    response = requests.post(config["api"] + "/update_articles", json={"articles": scraped_articles, "security_token": config["security_token"]})
+    if response.status_code != 200:
+        logger.error(f"Update of daily articles failed. Response: {response.text}")
+    else:
+        logger.info("Save complete!")
 
-    # Penser à ajouter une gestion des erreurs robuste à toutes les étapes !
-
-    # CODE TEMPORAIRE !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    import pandas as pd
-
-    articles = pd.DataFrame(scraped_articles)
-    articles.to_csv("./articles.csv")
