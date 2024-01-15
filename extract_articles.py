@@ -1,6 +1,9 @@
 """
+Vincent Papelard, 2024
+
 This script extracts and filters news articles from a list of RSS feeds and 
-saves them using a provided API.
+saves them using a provided API. It is meant to be run at regular intervals, 
+e.g. once per day, so that the saved news articles stay up-to-date.
 """
 import logging
 
@@ -16,14 +19,22 @@ def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_ma
     contains the n first articles along with their URL and their title.
 
     feed_path: path to the RSS feed to process
-    articles_max_count: how many articles should be extracted from the RSS, at
-    most.
+    - source_id: the id that points to the RSS feed in the database. Retrieved
+    from the API (cf get_sources_list)
+    - source_name: the RSS source name, also retrieved from the API
+    - feed_path: the URL (or filepath) to the RSS feed
+    - articles_max_count: the max number of articles to extract from the RSS
+    feed. This function will extract the articles content in their order in the 
+    RSS feed, until 'articles_max_count' articles have been extracted or the end 
+    of the feed has been reached.
 
     Returns a list of dictionaries that include the following elements:
     'title': title of the article
     'content': content of the article
     'source': the name of the website the news originate from (equal to 
     'source_name')
+    'source_id': the unique ID given to the source, as provided by the 
+    'source_id' parameter
     'url': the URL where the article can be found.
     """
     articles = []
@@ -39,7 +50,11 @@ def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_ma
         }
         try:
             article_data["content"] = parse_article_webpage(item.link)
+            # The function call below makes sure that the article content
+            # is relevant and can be used, cf function docstring for further 
+            # info
             if not content_is_relevant(article_data["content"]):
+                # Irrelevant entries in the RSS feed are simply ignored
                 continue
         except newspaper.article.ArticleException:
             continue
@@ -72,6 +87,8 @@ def content_is_relevant(article: str) -> bool:
     - Ads that were improperly detected as news articles by newspaper.Article
     - Articles that are too short too extract any meaningful recaps, such as 
     live newsfeeds content for example.
+    - Website banners prompting the reader to subscribe to the newspaper, which
+    are sometimes improperly detected as article content.
 
     Returns a boolean (True -> the content can be used, False -> it can't).
     """
