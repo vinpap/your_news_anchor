@@ -12,7 +12,6 @@ import feedparser
 import newspaper
 import yaml
 
-
 def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_max_count=10) -> list:
     """
     Retrieves the RSS feed located at feed_path and returns a dictionary that
