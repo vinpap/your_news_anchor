@@ -48,13 +48,22 @@ def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_ma
             "source_id": source_id
         }
         try:
-            article_data["content"] = parse_article_webpage(item.link)
+            parsed_article = parse_article_webpage(item.link)
+            
             # The function call below makes sure that the article content
             # is relevant and can be used, cf function docstring for further 
             # info
-            if not content_is_relevant(article_data["content"]):
+            if not content_is_relevant(parsed_article["text"]):
                 # Irrelevant entries in the RSS feed are simply ignored
                 continue
+
+            article_data["content"] = parsed_article["text"]
+
+            # NETTOYER parsed_article["authors"] ici
+            article_data["authors"] = ", ". join(parsed_article["authors"])
+
+            article_data["date"] = parsed_article["date"]
+
         except newspaper.article.ArticleException:
             continue
 
@@ -65,15 +74,25 @@ def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_ma
         
     return articles
 
-def parse_article_webpage(url: str) -> str:
+def parse_article_webpage(url: str) -> dict:
     """
-    Parses a webpage and returns the text content of the news article found on it.
+    Parses a webpage and returns a dictionary that contains its web content as
+    well as some metadata about it.
     """
     article = newspaper.Article(url)
     article.download()
     article.parse()
+    response_object = {
+        "text": article.text,
+        "authors": article.authors
+    }
+    try:
+        response_object["date"] = article.publish_date.strftime('%a %d %b %Y, %I:%M%p')
+    # Accounting for the case where no date was found
+    except AttributeError:
+        response_object["date"] = ""
 
-    return article.text
+    return response_object
 
 def content_is_relevant(article: str) -> bool:
     """
