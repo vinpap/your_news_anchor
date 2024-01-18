@@ -12,6 +12,9 @@ import feedparser
 import newspaper
 import yaml
 
+import spacy
+nlp = spacy.load("fr_core_news_lg")
+
 def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_max_count=10) -> list:
     """
     Retrieves the RSS feed located at feed_path and returns a dictionary that
@@ -59,10 +62,15 @@ def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_ma
 
             article_data["content"] = parsed_article["text"]
 
-            # NETTOYER parsed_article["authors"] ici
-            article_data["authors"] = ", ". join(parsed_article["authors"])
+            # Authors name are filtered in order to get rid of some bad 
+            # detections, e.g. errors caused by an improper use of capital
+            # letters or point
+            article_data["authors"] = parsed_article["authors"]
+            article_data["authors"] = filter_authors(article_data["authors"])
+            article_data["authors"] = ", ".join(article_data["authors"])
 
             article_data["date"] = parsed_article["date"]
+            article_data["image"] = parsed_article["image"]
 
         except newspaper.article.ArticleException:
             continue
@@ -84,15 +92,36 @@ def parse_article_webpage(url: str) -> dict:
     article.parse()
     response_object = {
         "text": article.text,
-        "authors": article.authors
+        "authors": article.authors,
     }
     try:
         response_object["date"] = article.publish_date.strftime('%a %d %b %Y, %I:%M%p')
     # Accounting for the case where no date was found
     except AttributeError:
         response_object["date"] = ""
+    
+    try:
+        response_object["image"] = article.top_image
+    # In case no image was found
+    except:
+        response_object["image"] = ""
+    
 
     return response_object
+
+def filter_authors(authors: list) -> list:
+    """
+    Filters the authors for an article in order to get rid of errors during 
+    authors detection.
+    """
+
+    filtered_authors = []
+    entities = nlp(", ".join(authors))
+    for word in entities.ents:
+        if word.label_ == "PER":
+            filtered_authors.append(word.text)
+    
+    return filtered_authors
 
 def content_is_relevant(article: str) -> bool:
     """
