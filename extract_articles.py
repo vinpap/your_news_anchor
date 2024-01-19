@@ -28,13 +28,13 @@ def parse_rss_feed(source_id: int, source_name: str, feed_path: str, articles_ma
     of the feed has been reached.
 
     Returns a list of dictionaries that include the following elements:
-    'title': title of the article
-    'content': content of the article
-    'source': the name of the website the news originate from (equal to 
+    - 'title': title of the article
+    - 'content': content of the article
+    - 'source': the name of the website the news originate from (equal to 
     'source_name')
-    'source_id': the unique ID given to the source, as provided by the 
+    - 'source_id': the unique ID given to the source, as provided by the 
     'source_id' parameter
-    'url': the URL where the article can be found.
+    - 'url': the URL where the article can be found.
     """
     articles = []
 
@@ -99,8 +99,6 @@ def content_is_relevant(article: str) -> bool:
         return False
     
     return True
-
-    # Ajouter un moyen de filtrer les articles réservés aux abonnés, si nécessaire
 
 
 def get_sources_list(endpoint: str) -> list:
