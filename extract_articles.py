@@ -26,6 +26,7 @@ if __name__ == "__main__":
 
     # Retrieving the list of RSS feeds from the API
     rss_sources = get_sources_list(config["api"] + "/feeds")
+    
 
     scraped_articles = []
 
