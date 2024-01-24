@@ -20,6 +20,8 @@ if __name__ == "__main__":
     logger = logging.getLogger()
     logger.info("Starting news articles extraction...")
     config = yaml.safe_load(open("./config.yml"))
+    with open("./token.txt") as token_file:
+        config["security_token"] = token_file.read()
 
     logger.info(f"""Database API endpoint: {config["api"]}""")
     logger.info(f"""Max number of articles to scrap per source: {config["max_articles_per_source"]}""")
