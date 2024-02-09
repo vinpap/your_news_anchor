@@ -5,6 +5,7 @@ This script extracts and filters news articles from a list of RSS feeds and
 saves them using a provided API. It is meant to be run at regular intervals, 
 e.g. once per day, so that the saved news articles stay up-to-date.
 """
+import os
 import logging
 
 import requests
@@ -20,8 +21,9 @@ if __name__ == "__main__":
     logger = logging.getLogger()
     logger.info("Starting news articles extraction...")
     config = yaml.safe_load(open("./config.yml"))
-    with open("./token.txt") as token_file:
-        config["security_token"] = token_file.read()
+    
+    # Getting API key fron environment values
+    config["security_token"] = os.environ["API_TOKEN"]
 
     logger.info(f"""Database API endpoint: {config["api"]}""")
     logger.info(f"""Max number of articles to scrap per source: {config["max_articles_per_source"]}""")
