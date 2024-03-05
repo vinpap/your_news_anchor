@@ -20,7 +20,10 @@
     \bigskip
     \large E1 - Mise en situation \\ 
     Développeur en Intelligence Artificielle,
-    titre professionnel enregistré au RNCP - École IA Microsoft by Simplon}
+    titre professionnel enregistré au RNCP - École IA Microsoft by Simplon
+    \vfill
+    \includegraphics[width=14cm]{cover.jpg} 
+    \vfill}
 \date{9 février 2024}
 \author{par Vincent Papelard}
 
@@ -35,7 +38,8 @@
     \pagenumbering{arabic}
 
     \section*{Introduction}
-    Dans un contexte de diffusion rapide de l'information via Internet et face à la multitude de sources d'informations disponibles, il est parfois difficile de savoir où donner de la tête. Où trouver les actualités qui nous intéressent vraiment, en allant à l'essentiel ? C'est la problématique à laquelle répond ce projet.
+    Dans un contexte de diffusion rapide de l'information via Internet et face à la multitude de sources d'informations disponibles, il est parfois difficile de savoir où s'informer. Où trouver les actualités qui nous intéressent vraiment, en allant à l'essentiel ? C'est la problématique à laquelle répond ce projet.
+    
     \textbf{Your News Anchor} est une application web qui offre à ses utilisateurs un résumé concis des actualités du jour. Ce résumé est automatiquement généré par IA à l'aide d'une liste de sources personnalisable par l'utilisateur, puis présenté par une voix synthétisée comme un vrai journal télévisé.
     Ce dossier se penche sur toute la partie du projet relative à la collecte, au nettoyage et au stockage des données nécessaires à la génération automatique de résumés.
     La totalité du code est disponible sur GitHub :
@@ -78,14 +82,13 @@
     \end{itemize}
     Chaque composant est développé et déployé indépendamment des deux autres, selon une architecture de microservices.
 
+    \subsection{Collecte des données}
     \begin{figure}[h]
-        \includegraphics[width=12cm]{composants}
+        \includegraphics[width=15cm]{fonctionnement_script}
         \centering
-        \caption{Les différents composants du projet}
+        \caption{Fonctionnement du script d'extraction des articles}
         \centering
     \end{figure}
-
-    \subsection{Collecte des données}
     La collecte des données est réalisée par un script Python destiné à être exécuté à intervalles réguliers (une fois par jour, par exemple) afin que les articles stockés dans la base de données soient à jour.
     La collecte des données est réalisée en plusieurs étapes. Tout d'abord, le script va récupérer une liste de sources d'informations d'où les articles seront extraits. Chaque source d'information consiste en un flux RSS stocké dans la base de données (cf partie sur le stockage des données pour plus d'informations). Le script va donc commencer par appeler l'API pour récupérer les liens des flux RSS à utiliser.
     On va ensuite utiliser le module \textbf{\href{https://pypi.org/project/feedparser/}{feedparser}} de Python pour parcourir les flux RSS et en extraire une liste d'URLs d'articles avec d'autres informations telles que le titre de chaque article. Dans la mesure où l'objectif final est de réaliser des résumés concis des actualités du jour, on ne récupère pas la totalité des articles de chaque flux RSS. À la place on récupère les n premiers articles de chaque flux (les premiers articles correspondent souvent aux gros titres du jour, et ont donc plus de chance d'être pertinents).
@@ -98,7 +101,7 @@
         \item Par ailleurs, cette technique est très peu robuste. Le moindre changement apporté au code source des pages web peut rendre notre code obsolète.
     \end{itemize}
     Pour toutes ces raisons, on préfèrera s'orienter vers d'autres méthodes. L'idéal serait de pouvoir coder un "web scraper universel", qui nous permettrait d'extraire le texte de n'importe quel article publié sur une page web quelconque. Cette tâche est extrêmement difficile à mettre en place en pratique, mais il est néanmoins possible de s'en approcher grâce au package Python \textbf{\href{https://newspaper.readthedocs.io/en/latest/}{newspaper}}, qui est utilisé dans le cadre de ce projet.
-    Newspaper est un package créé pour extraire et traiter des articles depuis des pages web à l'aide de techniques d'analyse de syntaxe intelligente et de NLP, grâce à des packages tels que nltk et BeautifulSoup. Récupérer un article de journal sur une page web devient alors trivial :
+    Newspaper est un package créé pour extraire et traiter des articles depuis des pages web. Il permet ainsi d'extraire un article depuis une page web en quelques lignes :
     \begin{verbatim}
         from newspaper import Article
 
@@ -108,7 +111,7 @@
         article.parse()
         text = article.text
     \end{verbatim}
-    Il est aussi possible de récupérer des métadonnées concernant les articles collectés (auteurs, dates, nom du journal ou site d'information...). Dans notre cas, on récupérera les informations suivantes :
+    Newspaper fonctionne en analysant le code des pages web avec BeautifulSoup. Certaines informations (titre, date...) sont retrouvées en cherchant des balises spécifiques telles que la balise <h1> par exemple, où grâce à des expressions régulières. Newspaper extrait aussi d'autres informations telles que les mots-clés d'un article grâce au module de NLP nltk. Dans notre cas, on récupérera les informations suivantes :
     \begin{itemize}
         \item le texte de l'article
         \item les auteurs
@@ -140,7 +143,16 @@
         \centering
     \end{figure}
 
-    \textbf{Remarque} : seules les tables 'daily\_articles' et 'sources' sont exploitées dans le cadre de ce dossier. Les autres tables sont utilisées pour gérer d'autres aspects de notre application et sortent du cadre de ce E1.
+    \textbf{Remarque} : seules les tables 'daily\_articles' et 'sources' sont exploitées dans ce dossier. Les autres tables sont utilisées pour gérer d'autres aspects de notre application et sortent du cadre de ce E1.
+
+    La base de données est composée des tables suivantes :
+    \begin{itemize}
+        \item \textit{sources} : contient une liste de sources d'information, avec le lien vers leur flux RSS. Cette liste est définie par les administrateurs de l'application et ne peut pas être modifiée par les utilisateurs. Les flux RSS disponibles dans cette table peuvent être utilisés par n'importe quel utilisateur
+        \item \textit{users\_selected\_sources} : cette table recense les flux RSS ajoutés manuellement par les utilisateurs. Seul l'utilisateur qui a ajouté un flux peut l'incorporer dans sa liste de sources d'informations
+        \item \textit{users} : la table qui contient les informations concernant les utilisateurs (identifiant, hash du mot de passe...)
+        \item \textit{daily\_articles} : contient tous les articles extraits par le script de collecte des données. Le contenu de cette table est renouvelé à intervalles réguliers (par exemple toutes les 24 heures), lorsque le script de collecte des données est exécuté
+        \item \textit{daily\_recaps} : la table où sont stockés les résumés d'articles générés. Ces résumés sont eux aussi renouvelés à intervalles réguliers.
+    \end{itemize}
 
     \subsection{Accès aux données et API}
     
@@ -172,23 +184,9 @@
 
     Lors du déploiement, ces instructions créeront sur le serveur des variables d'environnement qui contiennent nos valeurs secrètes (le mot de passe de la base de données et notre token d'API) sans pour autant exposer leur valeur dans le code.
 
-    \begin{figure}[h]
-        \includegraphics[width=12cm]{azure\_web\_app}
-        \centering
-        \caption{Dashboard de notre API sur Azure}
-        \centering
-    \end{figure}
-
     \subsection{Script d'extraction des données}
 
     Notre script d'extraction d'articles doit être automatiquement exécuté à intervalles réguliers. La solution retenue a été de l'exécuter sur \textbf{\href{https://www.pythonanywhere.com/}{PythonAnywhere}}. PythonAnywhere est une plateforme basée sur AWS qui permet de déployer des scripts et applications Python avec un minimum d'efforts.
-
-    \begin{figure}[h]
-        \includegraphics[width=12cm]{python\_anywhere}
-        \centering
-        \caption{Dashboard de PythonAnywhere. Cette page nous permet de planifier l'exécution de scripts à intervalles réguliers, ici toutes les 24 heures}
-        \centering
-    \end{figure}
 
     \section*{Conclusion}
 
@@ -200,6 +198,13 @@
     \newpage
     \section*{Annexes \huge \centering}
     \addcontentsline{toc}{section}{Annexes}
+    \section*{Architecture générale du projet}
+    \begin{figure}[h]
+        \includegraphics[width=12cm]{composants}
+        \centering
+        \caption{Les différents composants du projet}
+        \centering
+    \end{figure}
     \section*{Sources de données utilisées pour les tests}
     Voici la liste des flux RSS avec lesquels l'extraction de données a été testée avec succès pendant le développement :
     \begin{itemize}
@@ -237,4 +242,17 @@
             - DELETE FROM daily_articles WHERE id IN ('anciens_id');
         \end{verbatim}
     \end{itemize}
+    \section*{Captures d'écran}
+    \begin{figure}[h]
+        \includegraphics[width=12cm]{azure\_web\_app}
+        \centering
+        \caption{Dashboard de notre API sur Azure}
+        \centering
+    \end{figure}
+    \begin{figure}[h]
+        \includegraphics[width=12cm]{python\_anywhere}
+        \centering
+        \caption{Dashboard de PythonAnywhere. Cette page nous permet de planifier l'exécution de scripts à intervalles réguliers, ici toutes les 24 heures}
+        \centering
+    \end{figure}
 \end{document}
