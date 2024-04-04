@@ -30,6 +30,7 @@ jobs:
       
       - name: Run tests
         run: |
+          python3 -m spacy download fr_core_news_lg
           pytest
 
 
