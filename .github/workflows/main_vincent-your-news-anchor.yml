@@ -32,5 +32,9 @@ jobs:
         run: |
           python3 -m spacy download fr_core_news_lg
           pytest
+        env: 
+          API: ${{ secrets.API }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+
 
 

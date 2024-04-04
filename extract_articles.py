@@ -11,8 +11,6 @@ import logging
 
 import requests
 
-import yaml
-
 from extraction_functions import parse_rss_feed, get_sources_list
 
 
@@ -23,10 +21,11 @@ if __name__ == "__main__":
 
     logger = logging.getLogger()
     logger.info("Starting news articles extraction...")
-    config = yaml.safe_load(open("./config.yml"))
+    config = {}
 
-    # Getting API key fron environment values
+    # Getting API key and endpoint from environment values
     config["security_token"] = os.environ["API_TOKEN"]
+    config["API"] = os.environ["API"]
 
     logger.info(f"""Database API endpoint: {config["api"]}""")
     logger.info(
