@@ -1,3 +1,0 @@
-# DO NOT PUSH THIS
-api: "https://vincent-your-news-anchor.azurewebsites.net" # The endpoint where the database API is located
-max_articles_per_source: 5 # The max number of articles to scrap from a given source
