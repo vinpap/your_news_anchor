@@ -19,11 +19,12 @@ export "API"="vincent-your-news-anchor.azurewebsites.net"
 export "API_TOKEN"="<entrez la clé de l'API ici>"
 ```
 Notez que ces valeurs doivent être à nouveau définies si l'API est redéployée ailleurs. 
+
 3) Exécuter le script :
 ```
 python extract_articles.py
 ```
-**Remarque :** ce script est destiné à être exécuté toutes les 24 heures pour que les articles enregistrés dans la base de données soient toujours d'actualité. [PythonAnywhere](https://www.pythonanywhere.com/) a été utilisé pour automatiser l'exécution du script, mais d'autres solutions telles qu'[Azure Functions](https://azure.microsoft.com/fr-fr/products/functions).
+**Remarque :** ce script est destiné à être exécuté toutes les 24 heures pour que les articles enregistrés dans la base de données soient toujours d'actualité. [PythonAnywhere](https://www.pythonanywhere.com/) a été utilisé pour automatiser l'exécution du script, mais d'autres solutions telles qu'[Azure Functions](https://azure.microsoft.com/fr-fr/products/functions) sont également disponibles.
 
 ## Tester le code
 Des tests unitaires sont disponibles dans le dossier 'test' pour vérifier le fonctionnement des fonctions d'extraction de contenu. Ces tests sont exécutés automatiquement grâce à GitHub Actions lorsque du nouveau code est poussé sur GitHub, mais il est aussi possible de les exécuter manuellement :
