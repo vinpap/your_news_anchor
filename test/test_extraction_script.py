@@ -3,7 +3,8 @@ Vincent Papelard, 2024
 
 Testing script for extract_articles.py.
 """
-
+import sys
+sys.path.append("../your_news_anchor")
 import newspaper
 import extraction_functions
 
@@ -49,6 +50,6 @@ def test_content_is_relevant():
     assert not extraction_functions.content_is_relevant(irrelevant_text)
     assert not extraction_functions.content_is_relevant(irrelevant_text_2)
 
-    with open("./testing_data/article_example.txt", "r") as article:
+    with open("./test/testing_data/article_example.txt", "r") as article:
         relevant_text = article.read()
         assert extraction_functions.content_is_relevant(relevant_text)
