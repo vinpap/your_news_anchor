@@ -26,14 +26,16 @@ if __name__ == "__main__":
     # Getting API key and endpoint from environment values
     config["security_token"] = os.environ["API_TOKEN"]
     config["API"] = os.environ["API"]
+    config["max_articles_per_source"] = 5
 
-    logger.info(f"""Database API endpoint: {config["api"]}""")
+    logger.info(f"""Database API endpoint: {config["API"]}""")
     logger.info(
         f"""Max number of articles to scrap per source: {config["max_articles_per_source"]}"""
     )
 
     # Retrieving the list of RSS feeds from the API
-    rss_sources = get_sources_list(config["api"] + "/all_feeds")
+    rss_sources = get_sources_list(config["API"] + "/all_feeds")
+    
     print(rss_sources)
 
     scraped_articles = []
@@ -53,7 +55,7 @@ if __name__ == "__main__":
 
     logger.info("Saving all articles...")
     response = requests.post(
-        config["api"] + "/update_articles",
+        config["API"] + "/update_articles",
         json={"articles": scraped_articles, "security_token": config["security_token"]},
     )
     if response.status_code != 200:
