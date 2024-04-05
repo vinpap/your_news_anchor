@@ -7,6 +7,7 @@
 \usepackage[justification=centering]{caption}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{spverbatim}
 
 \hypersetup{
   colorlinks=true,
@@ -76,24 +77,28 @@
     \end{figure}
 
     \section{Les composants du projet}
-    Le projet est divisé en trois composants présentés dans la figure 2. Ces composants assurent les tâches suivantes :
+    Le projet est divisé en trois composants : 
     \begin{itemize}
-        \item la collecte des données
-        \item le nettoyage des données récupérées
-        \item le stockage des données pour que l'application puisse les utiliser
+        \item le script \href{https://github.com/vinpap/your_news_anchor/blob/main/extract_articles.py}{extract\_articles.py}, qui réalise la collecte et le nettoyage des articles de journaux
+        \item une base de données PostgreSQL hébergée sur Azure qui stocke les sources d'information et les articles extraits ainsi que les informations concernant les utilisateurs
+        \item une \href{https://github.com/vinpap/your_news_anchor_db_api}{API} qui expose cette base de données.
     \end{itemize}
-    Chaque composant est développé et déployé indépendamment des deux autres, selon une architecture de microservices.
+    Chaque composant est développé et déployé indépendamment des deux autres, selon une architecture de microservices. Les différentes étapes de l'exécution du projet sont détaillées dans la figure 2. Par ailleurs, des \hyperlink{screenshots_processus}{captures d'écran} sont présentées dans les annexes pour illustrer les diférentes étapes du processus.
     \begin{figure}[h]
         \includegraphics[width=15cm]{fonctionnement_script}
         \centering
-        \caption{Fonctionnement du script d'extraction des articles}
+        \caption{Fonctionnement général du projet, de la récupération de la liste des sources d'information à utiliser à l'enregistrement des articles extraits dans la base de données.}
         \centering
     \end{figure}
     
     \subsection{Collecte des données}
 
-    La collecte des données est réalisée par un script Python destiné à être exécuté à intervalles réguliers (une fois par jour, par exemple) afin que les articles stockés dans la base de données soient à jour.
-    La collecte des données est réalisée en plusieurs étapes. Tout d'abord, le script va récupérer une liste de sources d'informations d'où les articles seront extraits. Chaque source d'information consiste en un flux RSS stocké dans la base de données (cf partie sur le stockage des données pour plus d'informations). Le script va donc commencer par appeler l'API pour récupérer les liens des flux RSS à utiliser.
+    La collecte des données est réalisée par le script \href{https://github.com/vinpap/your_news_anchor/blob/main/extract_articles.py}{extract\_articles.py}. Afin que les articles stockés dans la base de données restent à jour, ce script est \textbf{automatiquement exécuté toutes les 24 heures} pour récupérer les derniers articles de journaux publiés.
+    
+    La collecte des données est réalisée en plusieurs étapes :
+    \begin{enumerate}
+        \item Tout d'abord, le script appelle l'API pour récupérer une liste de sources d'information d'où extraire des articles.
+    \end{enumerate}
     On va ensuite utiliser le module \textbf{\href{https://pypi.org/project/feedparser/}{feedparser}} de Python pour parcourir les flux RSS et en extraire une liste d'URLs d'articles avec d'autres informations telles que le titre de chaque article. Dans la mesure où l'objectif final est de réaliser des résumés concis des actualités du jour, on ne récupère pas la totalité des articles de chaque flux RSS. À la place on récupère les n premiers articles de chaque flux (les premiers articles correspondent souvent aux gros titres du jour, et ont donc plus de chance d'être pertinents).
     Enfin, on récupère le code HTML des pages web de chaque article et on en extrait le texte de l'article ainsi que plusieurs métadonnées utiles (auteurs, date de publication...). 
 
@@ -124,6 +129,7 @@
     Il est important de noter que cette solution n'est pas parfaite. Certains types de contenu, tels que les vidéos, ne sont pas exploitables. Newspaper a aussi du mal à traiter certains sites particuliers (il échoue à récupérer les articles du site 'L'Équipe', par exemple). Malgré tout, les résultats obtenus ont été concluants avec la grande majorité des sites d'information testés, en français comme en anglais.
 
     \subsection{Nettoyage des données}
+    Le nettoyage des données est également réalisé par le script \href{https://github.com/vinpap/your_news_anchor/blob/main/extract_articles.py}{extract\_articles.py}.
     Après avoir collecté les articles, le script Python va passer par une étape de nettoyage des données. Malgré la bonne qualité générale du texte extrait, certains types de texte ne sont pas exploitables pour générer des résumés :
     \begin{itemize}
         \item Les reportages vidéo, qui ne comportent généralement qu'un bref texte de description sous la vidéo
@@ -146,7 +152,15 @@
         \centering
     \end{figure}
 
-    \textbf{Remarque} : seules les tables 'daily\_articles' et 'sources' sont exploitées dans ce dossier. Les autres tables sont utilisées pour gérer d'autres aspects de notre application et sortent du cadre de ce E1.
+    PARLER DE L'OPTIMISATION DES REQUÊTES !!!!!! Suppression des vieilles données 
+    Métriques pour rappel : 
+
+    temps d'origine : 0.017568111419677734 seconds
+
+    Modif dans la requête de sélection des sources : on sélectionne seulement l'id dans user\_sources, cf requête de sélection des sources pour un utilisateur)
+    temps après modif : 0.015959501266479492 seconds
+
+    
 
     La base de données est composée des tables suivantes :
     \begin{itemize}
@@ -168,6 +182,12 @@
 
     Dans la mesure où la requête envoyée à ce deuxième endpoint supprime des données, il a fallu sécuriser l'accès à la base de données. Dans ce but, une clé d'API secrète doit étre envoyée avec la requête. Cette clé est stockée dans une variable d'environnement afin de ne pas être visible "en clair" sur un dépôt GitHub, par exemple. Plus d'informations sont disponibles dans la section consacrée au déploiement du projet.
 
+    \section{Tests et intégration continue}
+    Afin de garantir la qualité du code et de s'assurer que ni notre script extract\_articles.py ni le script de notre API app.py ne vont cesser de fonctionner, plusieurs mesures ont été prises :
+    \begin{itemize}
+        \item des tests unitaires ont été codés dans le fichier \href{https://github.com/vinpap/your_news_anchor/blob/main/test/test_extraction_script.py}{test\_extraction\_script.py} pour vérifier que les fonctions qui permettent d'extraire les articles de journaux de pages web fonctionnent bien comme attendu
+        \item ces tests ont été \href{https://github.com/vinpap/your_news_anchor/blob/main/.github/workflows/main_vincent-your-news-anchor.yml}{automatisés} avec GitHub Action. Ils sont ainsi automatiquement exécutés à chaque fois que du code est intégré à la branche 'main' du dépôt 'your\_news\_anchor'.
+    \end{itemize}
     \section{Déploiement}
     Comme évoqué plus haut, les trois composants de ce projet sont développés et déployés indépendamment les uns des autres.
     \subsection{Base de données}
@@ -201,8 +221,40 @@
     \newpage
     \section*{Annexes \huge \centering}
     \addcontentsline{toc}{section}{Annexes}
+    \section*{Illustration de l'exécution du projet}
+    \hypertarget{screenshots_processus}{}
+    \begin{figure}[h!]
+        \includegraphics[width=12cm]{db_1}
+        \centering
+        \caption{Notre base de données PostgreSQL stocke une liste de flux RSS à utiliser pour récupérer les adresses web d'articles de journaux. Cette capture d'écran montre la table 'standard\_sources' qui contient une liste de flux RSS disponibles pour tous les utilisateurs, mais ces derniers peuvent aussi ajouter leur propre liste de flux RSS qui seront stockés dans la table 'user\_sources'.}
+        \centering
+    \end{figure}
+    \begin{figure}[h!]
+        \includegraphics[width=12cm]{api_1}
+        \centering
+        \caption{Le script extract\_articles.py accède à la base de données via une API. Cette image montre le résultat d'une requête envoyée à l'API pour récupérer la liste des sources d'information à utiliser pour un utilisateur spécifique. Ces sources sont soit des sources 'standard', c'est-à-dire que tous les utilisateurs y ont accès, soit des sources personnalisées que l'utilisateur a lui-même enregistrées.}
+        \centering
+    \end{figure}
+    \begin{figure}[h!]
+        \includegraphics[width=12cm]{rss}
+        \centering
+        \caption{Les flux RSS nous permettent de récupérer les adresses web des derniers articles publiés sur un site d'information. Cette capture d'écran nous montre une partie du flux RSS du site du journal Le Monde.}
+        \centering
+    \end{figure}
+    \begin{figure}[h!]
+        \includegraphics[width=12cm]{original_website}
+        \centering
+        \caption{Le flux RSS présenté ci-dessus permet à notre script extract\_articles.py d'accéder à l'article suivant.}
+        \centering
+    \end{figure}
+    \begin{figure}[h!]
+        \includegraphics[width=12cm]{db_2}
+        \centering
+        \caption{Après avoir extrait et nettoyé le contenu de l'article depuis la page web, le script extract\_articles.py enregistre les articles extraits dans la base de données via le point de terminaison '/update\_articles' de l'API. Cette capture d'écran montre le contenu de la table 'daily\_articles' dans la base de données, incluant l'article de journal ci-dessus.}
+        \centering
+    \end{figure}
     \section*{Architecture générale du projet}
-    \begin{figure}[h]
+    \begin{figure}[h!]
         \includegraphics[width=12cm]{composants}
         \centering
         \caption{Les différents composants du projet}
@@ -230,21 +282,56 @@
         \item https://www.huffpost.com/section/world-news/feed
         \item https://news.google.com/rss
     \end{itemize}
-    \section*{Requêtes SQL}
+    \section*{SQL}
+    Voici la liste des requêtes et insertions SQL utilisées par l'API \href{}{'your\_news\_anchor\_db\_api} dans le cadre de ce projet :
     \begin{itemize}
-        \item Récupération de la liste des sources, déclenchée par l'endpoint /feeds : 
-        \begin{verbatim}
-            SELECT * FROM rss_feeds;
-        \end{verbatim}
-        \item Actualisation des articles enregistrés dans la base de données :
-        \begin{verbatim}
-            - SELECT id FROM daily_articles;
-            - INSERT INTO daily_articles
-            (title, url, content, rss_source_id, authors, date, image) 
-            VALUES('titre', 'url', 'texte', 'id_rss', 'auteurs', 'date', 'lien_image');
-            - DELETE FROM daily_articles WHERE id IN ('anciens_id');
-        \end{verbatim}
+        \item point de terminaison /feeds : récupération de la liste des flux RSS disponibles pour un utilisateur
+        \begin{itemize}
+            \item Pour vérifier que l'utilisateur concerné existe bien :
+            \begin{verbatim}
+            SELECT * FROM users WHERE username='{username}';
+            \end{verbatim}
+            \item Pour récupérer l'identifiant de l'utilisateur :
+            \begin{verbatim}
+            SELECT id from users where username='{username}';
+            \end{verbatim}
+            \item Pour récupérer la liste des flux RSS disponibles :
+            \begin{spverbatim}
+            SELECT url, language, topic, name FROM (select url, language, topic, name from user_sources where user_id={user_id}) union  (select url, language, topic, name from standard_sources where not exists (select * from user_sources where user_sources.url=standard_sources.url));
+            \end{spverbatim}
+        \end{itemize}
+        \item point de terminaison /all\_feeds : récupération de la liste de tous les flux RSS enregistrés
+        \begin{itemize}
+            \item Récupération des flux RSS enregistrés par les utilisateurs :
+            \begin{spverbatim}
+            SELECT id, url, language, topic, name FROM user_sources;
+            \end{spverbatim}
+            \item Récupération des flux RSS disponibles pour tous les utilisateurs :
+            \begin{spverbatim}
+            SELECT id, url, language, topic, name from standard_sources;
+            \end{spverbatim}
+        \end{itemize}
+        \item point de terminaison /update\_articles : mise à jour des articles stockés dans la base de données
+        \begin{itemize}
+            \item Sélection des identifiants de tous les articles déjà enregistrés, permet d'identifier les articles obsolètes qui doivent être supprimés après l'ajout des nouveau articles :
+            \begin{spverbatim}
+            SELECT id FROM daily_articles;
+            \end{spverbatim}
+            \item Insertion des nouveaux articles :
+            \begin{spverbatim}
+            INSERT INTO daily_articles(title, url, content, author, image, is_from_user, user_source_id) VALUES('{article.title.replace("'", '"')}', '{article.url.replace("'", '"')}', '{article.content.replace("'", '"')}', '{article.authors.replace("'", '"')}', '{article.image}', true, {article.source_id});
+            \end{spverbatim}
+            Dans cette insertion, les valeurs des différentes informations concernant l'article sont définies par le script Python.
+            \item Suppression des anciens articles :
+            \begin{spverbatim}
+            DELETE FROM daily_articles WHERE id IN ({", ". join(old_article_ids)});
+            \end{spverbatim}
+            Ici 'old\_article\_ids' est la liste Python de tous les identifiants des articles déjà présents dans la base de données.
+        \end{itemize}
     \end{itemize}
+
+
+
     \section*{Captures d'écran}
     \begin{figure}[h]
         \includegraphics[width=12cm]{azure\_web\_app}
