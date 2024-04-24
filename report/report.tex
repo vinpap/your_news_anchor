@@ -41,11 +41,11 @@
     \section*{Introduction}
     Dans un contexte de diffusion rapide de l'information via Internet et face à la multitude de sources d'informations disponibles, il est parfois difficile de savoir où s'informer. Où trouver les actualités qui nous intéressent vraiment, en allant à l'essentiel ? C'est la problématique à laquelle répond ce projet qui nous est confié par notre client, un gros acteur dans le domaine des médias.
     
-    \textbf{Your News Anchor} est une application web qui offre à ses utilisateurs un résumé concis des actualités du jour. Ce résumé est automatiquement généré par IA à l'aide d'une liste de sources personnalisable par l'utilisateur, puis présenté par une voix synthétisée comme un vrai journal télévisé.
-    Ce dossier se penche sur toute la partie du projet relative à la collecte, au nettoyage et au stockage des données nécessaires à la génération automatique de résumés.
+    \textbf{Your News Anchor} est une application web qui offre à ses utilisateurs un résumé concis des actualités du jour. Ce résumé est automatiquement généré par intelligence artificielle à l'aide d'une liste de sources personnalisable par l'utilisateur, puis présenté par une voix synthétisée comme un vrai journal télévisé.
+    Ce dossier se penche sur toute la partie du projet relative à la collecte, au nettoyage et au stockage des données nécessaires à la génération automatique de résumés. \textbf{Le développement de l'application à proprement parler ainsi que la conception d'un modèle d'intelligence artificielle de génération de résumé ne sont pas couverts dans ce dossier}.
     La totalité du code est disponible sur GitHub :
     \begin{itemize}
-        \item Collecte/nettoyage de données : \url{https://github.com/vinpap/your_news_anchor}
+        \item Collecte, nettoyage et aggrégation des données : \url{https://github.com/vinpap/your_news_anchor}
         \item API de la base de données : \url{https://github.com/vinpap/your_news_anchor_db_api}
     \end{itemize}
 
@@ -79,11 +79,11 @@
     \section{Les composants du projet}
     Le projet est divisé en trois composants : 
     \begin{itemize}
-        \item le script \href{https://github.com/vinpap/your_news_anchor/blob/main/extract_articles.py}{extract\_articles.py}, qui réalise la collecte et le nettoyage des articles de journaux
-        \item une base de données PostgreSQL hébergée sur Azure qui stocke les sources d'information et les articles extraits ainsi que les informations concernant les utilisateurs
-        \item une \href{https://github.com/vinpap/your_news_anchor_db_api}{API} qui expose cette base de données.
+        \item une \textbf{base de données} PostgreSQL hébergée sur Azure qui stocke les sources d'information et les articles de journal extraits ainsi que les informations concernant les utilisateurs de \textit{Your News Anchor}
+        \item une \href{https://github.com/vinpap/your_news_anchor_db_api}{API} qui expose cette base de données
+        \item le script \href{https://github.com/vinpap/your_news_anchor/blob/main/extract_articles.py}{extract\_articles.py}. Ce script effectue \textbf{la collecte, le nettoyage et l'aggrégation des articles de journal qui nous serviront à générer des résumés}, avant de les stocker dans la base de données en passant par l'API.
     \end{itemize}
-    Chaque composant est développé et déployé indépendamment des deux autres, selon une architecture de microservices. Les différentes étapes de l'exécution du projet sont détaillées dans la figure 2. Par ailleurs, des \hyperlink{screenshots_processus}{captures d'écran} sont présentées dans les annexes pour illustrer les diférentes étapes du processus.
+    Chaque composant est développé et déployé indépendamment des deux autres, selon une architecture de microservices. Les différentes étapes de l'exécution du projet sont détaillées dans la figure 2. Par ailleurs, des \textbf{\hyperref[img:screenshots_processus]{captures d'écran}} sont présentées dans les annexes pour illustrer les diférentes étapes du processus.
     \begin{figure}[h]
         \includegraphics[width=15cm]{fonctionnement_script}
         \centering
@@ -95,10 +95,8 @@
 
     La collecte des données est réalisée par le script \href{https://github.com/vinpap/your_news_anchor/blob/main/extract_articles.py}{extract\_articles.py}. Afin que les articles stockés dans la base de données restent à jour, ce script est \textbf{automatiquement exécuté toutes les 24 heures} pour récupérer les derniers articles de journaux publiés.
     
-    La collecte des données est réalisée en plusieurs étapes :
-    \begin{enumerate}
-        \item Tout d'abord, le script appelle l'API pour récupérer une liste de sources d'information d'où extraire des articles.
-    \end{enumerate}
+    La collecte des données est réalisée en plusieurs étapes. Tout d'abord, le script appelle l'API pour récupérer une liste de sources d'information d'où extraire des articles.
+
     On va ensuite utiliser le module \textbf{\href{https://pypi.org/project/feedparser/}{feedparser}} de Python pour parcourir les flux RSS et en extraire une liste d'URLs d'articles avec d'autres informations telles que le titre de chaque article. Dans la mesure où l'objectif final est de réaliser des résumés concis des actualités du jour, on ne récupère pas la totalité des articles de chaque flux RSS. À la place on récupère les n premiers articles de chaque flux (les premiers articles correspondent souvent aux gros titres du jour, et ont donc plus de chance d'être pertinents).
     Enfin, on récupère le code HTML des pages web de chaque article et on en extrait le texte de l'article ainsi que plusieurs métadonnées utiles (auteurs, date de publication...). 
 
@@ -152,25 +150,31 @@
         \centering
     \end{figure}
 
-    PARLER DE L'OPTIMISATION DES REQUÊTES !!!!!! Suppression des vieilles données 
-    Métriques pour rappel : 
-
-    temps d'origine : 0.017568111419677734 seconds
-
-    Modif dans la requête de sélection des sources : on sélectionne seulement l'id dans user\_sources, cf requête de sélection des sources pour un utilisateur)
-    temps après modif : 0.015959501266479492 seconds
-
-    
 
     La base de données est composée des tables suivantes :
     \begin{itemize}
-        \item \textit{sources} : contient une liste de sources d'information, avec le lien vers leur flux RSS. Cette liste est définie par les administrateurs de l'application et ne peut pas être modifiée par les utilisateurs. Les flux RSS disponibles dans cette table peuvent être utilisés par n'importe quel utilisateur
-        \item \textit{users\_selected\_sources} : cette table recense les flux RSS ajoutés manuellement par les utilisateurs. Seul l'utilisateur qui a ajouté un flux peut l'incorporer dans sa liste de sources d'informations
+        \item \textit{standard\_sources} : contient une liste de sources d'information, avec le lien vers leur flux RSS. Cette liste est définie par les administrateurs de l'application et ne peut pas être modifiée par les utilisateurs. Les flux RSS disponibles dans cette table peuvent être utilisés par n'importe quel utilisateur
+        \item \textit{user\_sources} : cette table recense les flux RSS ajoutés manuellement par les utilisateurs. Seul l'utilisateur qui a ajouté un flux peut l'incorporer dans sa liste de sources d'informations
         \item \textit{users} : la table qui contient les informations concernant les utilisateurs (identifiant, hash du mot de passe...)
         \item \textit{daily\_articles} : contient tous les articles extraits par le script de collecte des données. Le contenu de cette table est renouvelé à intervalles réguliers (par exemple toutes les 24 heures), lorsque le script de collecte des données est exécuté
         \item \textit{daily\_recaps} : la table où sont stockés les résumés d'articles générés. Ces résumés sont eux aussi renouvelés à intervalles réguliers.
     \end{itemize}
 
+    Différentes requêtes et insertions SQL sont utilisées pour réaliser les tâches suivantes :
+    \begin{itemize}
+        \item Récupération de la liste des flux RSS disponibles pour un utilisateur spécifique
+        \item Récupération de la liste de tous les flux RSS enregistrés
+        \item Mise à jour des articles de journal enregistrés dans la base de données avec une nouvelle liste d'articles.
+    \end{itemize} 
+    Une liste complète des requêtes SQL utilisées dans le cadre de ce projet est disponible \textbf{\hyperref[sec:sql]{en annexe}}.
+    On notera que ces requêtes ont été pensées pour optimiser la vitesse d'accès aux données. Ainsi :
+    \begin{itemize}
+        \item L'ancien contenu de la table \textit{daily\_articles} est supprimé avant d'y insérer les articles de journal du jour. L'objectif est de ne garder que des articles pertinents et de limiter la taille de cette table, ce qui accélère l'exécution des requêtes sur cette table
+        \item On modifie les requêtes pour ne sélectionner dans les tables que les informations dont on a besoin. Dans la \textbf{\hyperref[sec:query]{requête qui sélectionne la liste des flux RSS disponibles pour un utilisateur}}, par exemple, on nomme explicitement toutes les colonnes que l'on veut sélectionner dans notre requête plutôt que de tout sélectionner en utilisant 'SELECT *', qui est plus lent. À titre d'exemple, le temps d'exécution de la requête ci-dessus est passé de 18 ms à 15 ms en effectuant ce changement, avec environ dix lignes dans la table \textit{user\_sources} et la table \textit{standard\_sources}.
+    \end{itemize} 
+    
+
+    On notera que ces requêtes ne sont en aucun cas utilisées par notre script extract\_articles.py, qui n'a pas accès à la base de données. À la place, le script accède à la base de données en passant par une API que nous allons présenter dans la section suivante.
     \subsection{Accès aux données et API}
     
     Afin de simplifier l'accès aux données, une API a été développée pour exposer la base de données PostgreSQL. Cela nous évite de devoir gérer nous-mêmes les connexions et requêtes SQL dans notre application, et nous permet de mettre en place des sécurités pour contrôler qui accède à nos données et/ou les modifie.
@@ -185,8 +189,8 @@
     \section{Tests et intégration continue}
     Afin de garantir la qualité du code et de s'assurer que ni notre script extract\_articles.py ni le script de notre API app.py ne vont cesser de fonctionner, plusieurs mesures ont été prises :
     \begin{itemize}
-        \item des tests unitaires ont été codés dans le fichier \href{https://github.com/vinpap/your_news_anchor/blob/main/test/test_extraction_script.py}{test\_extraction\_script.py} pour vérifier que les fonctions qui permettent d'extraire les articles de journaux de pages web fonctionnent bien comme attendu
-        \item ces tests ont été \href{https://github.com/vinpap/your_news_anchor/blob/main/.github/workflows/main_vincent-your-news-anchor.yml}{automatisés} avec GitHub Action. Ils sont ainsi automatiquement exécutés à chaque fois que du code est intégré à la branche 'main' du dépôt 'your\_news\_anchor'.
+        \item des tests unitaires ont été codés dans le fichier \href{https://github.com/vinpap/your_news_anchor/blob/main/test/test_extraction_script.py}{test\_extraction\_script.py} pour vérifier que les fonctions qui permettent d'extraire les articles de journaux de pages web fonctionnent bien comme attendu. De la même manière, le \href{https://github.com/vinpap/your_news_anchor_db_api/blob/main/test_api.py}{fichier test\_api.py} contient des tests unitaires qui vérifient que les différents points de terminaison de l'API fonctionnent comme attendu.
+        \item ces tests ont été automatisés avec GitHub Action. Ils sont ainsi automatiquement exécutés à chaque fois que du code est intégré à la branche 'main' du dépôt 'your\_news\_anchor' ou du dépôt 'your\_news\_anchor\_db\_api'.
     \end{itemize}
     \section{Déploiement}
     Comme évoqué plus haut, les trois composants de ce projet sont développés et déployés indépendamment les uns des autres.
@@ -222,7 +226,7 @@
     \section*{Annexes \huge \centering}
     \addcontentsline{toc}{section}{Annexes}
     \section*{Illustration de l'exécution du projet}
-    \hypertarget{screenshots_processus}{}
+    \label{img:screenshots_processus}
     \begin{figure}[h!]
         \includegraphics[width=12cm]{db_1}
         \centering
@@ -283,8 +287,10 @@
         \item https://news.google.com/rss
     \end{itemize}
     \section*{SQL}
+    \label{sec:sql}
     Voici la liste des requêtes et insertions SQL utilisées par l'API \href{}{'your\_news\_anchor\_db\_api} dans le cadre de ce projet :
     \begin{itemize}
+        \label{sec:query}
         \item point de terminaison /feeds : récupération de la liste des flux RSS disponibles pour un utilisateur
         \begin{itemize}
             \item Pour vérifier que l'utilisateur concerné existe bien :
