@@ -93,9 +93,9 @@
     
     \subsection{Collecte des données}
 
-    La collecte des données est réalisée par le script \href{https://github.com/vinpap/your_news_anchor/blob/main/extract_articles.py}{extract\_articles.py}. Afin que les articles stockés dans la base de données restent à jour, ce script est \textbf{automatiquement exécuté toutes les 24 heures} pour récupérer les derniers articles de journaux publiés.
+    La collecte des données est réalisée par le script \href{https://github.com/vinpap/your_news_anchor/blob/main/extract_articles.py}{extract\_articles.py}, qui fait lui-même appel à des fonctions définies dans \href{https://github.com/vinpap/your_news_anchor/blob/5deffe3be7453d998b2377548902759869e1926d/extraction_functions.py}{extraction\_functions.py}. Afin que les articles stockés dans la base de données restent à jour, ce script est \textbf{automatiquement exécuté toutes les 24 heures} pour récupérer les derniers articles de journaux publiés.
     
-    La collecte des données est réalisée en plusieurs étapes. Tout d'abord, le script appelle l'API pour récupérer une liste de sources d'information d'où extraire des articles.
+    La collecte des données est réalisée en plusieurs étapes. Tout d'abord, le script appelle l'API pour récupérer une liste de sources d'information d'où extraire des articles \href{https://github.com/vinpap/your_news_anchor/blob/5deffe3be7453d998b2377548902759869e1926d/extract_articles.py#L37}{\textbf{(lien vers le code)}}.
 
     On va ensuite utiliser le module \textbf{\href{https://pypi.org/project/feedparser/}{feedparser}} de Python pour parcourir les flux RSS et en extraire une liste d'URLs d'articles avec d'autres informations telles que le titre de chaque article. Dans la mesure où l'objectif final est de réaliser des résumés concis des actualités du jour, on ne récupère pas la totalité des articles de chaque flux RSS. À la place on récupère les n premiers articles de chaque flux (les premiers articles correspondent souvent aux gros titres du jour, et ont donc plus de chance d'être pertinents).
     Enfin, on récupère le code HTML des pages web de chaque article et on en extrait le texte de l'article ainsi que plusieurs métadonnées utiles (auteurs, date de publication...). 
@@ -138,7 +138,9 @@
 
     Le premier problème peut être résolu simplement : il suffit de filtrer les articles en fonction de leur longueur, pour ne garder que ceux dont le nombre de caractères dépasse une certain seuil.
     En ce qui concerne la liste des auteurs, une solution un peu plus complexe a été trouvée : réaliser une détection d'entités dans la liste à l'aide de \textbf{\href{https://spacy.io/}{Spacy}} pour ne garder que les chaînes de caractère qui correspondent à des noms propres qui désignent des persones. Cela a permis d'éliminer la quasi-totalité des erreurs d'extraction de noms d'auteur.
-    
+
+    Après avoir été nettoyés, les articles extraits sont \href{https://github.com/vinpap/your_news_anchor/blob/5deffe3be7453d998b2377548902759869e1926d/extract_articles.py#L51}{rassemblés dans une liste Python} avant d'être enregistrés via une API dans la base de données décrite dans la section suivante.
+
     \subsection{Stockage des données}
 
     Toutes les informations extraites (articles et métadonnées) ainsi que la liste des sources d'information à traiter et toutes les autres données nécessaires au fonctionnement de l'application Your News Anchor sont stockées sur une base de données \textbf{PostgreSQL}. Le Modèle Physique de Données qui décrit la structure de notre base de données est présenté dans la figure 3.
@@ -174,7 +176,7 @@
     \end{itemize} 
     
 
-    On notera que ces requêtes ne sont en aucun cas utilisées par notre script extract\_articles.py, qui n'a pas accès à la base de données. À la place, le script accède à la base de données en passant par une API que nous allons présenter dans la section suivante.
+    On notera que ces requêtes ne sont en aucun cas utilisées par notre script extract\_articles.py, qui n'a pas accès à la base de données. À la place, le script accède à la base de données en passant par une API que nous allons présenter dans la section suivante. Cette API est définie dans un dépôt séparé, dans un script \textbf{app.py} (\href{https://github.com/vinpap/your_news_anchor_db_api/blob/main/app.py}{lien}). C'est ce script qui exécute les insertions et requêtes SQL présentées dans les annexes.
     \subsection{Accès aux données et API}
     
     Afin de simplifier l'accès aux données, une API a été développée pour exposer la base de données PostgreSQL. Cela nous évite de devoir gérer nous-mêmes les connexions et requêtes SQL dans notre application, et nous permet de mettre en place des sécurités pour contrôler qui accède à nos données et/ou les modifie.
@@ -195,13 +197,13 @@
     \section{Déploiement}
     Comme évoqué plus haut, les trois composants de ce projet sont développés et déployés indépendamment les uns des autres.
     \subsection{Base de données}
-    La base de données PostgreSQL a d'abord été mise en place localement pendant la période de développement. Elle a ensuite été exportée via un script SQL sur le service Azure Database for PostgreSQL de Microsoft Azure. 
+    La base de données PostgreSQL a d'abord été mise en place localement pendant la période de développement. Elle a ensuite été exportée via un script SQL accessible via \href{https://github.com/vinpap/your_news_anchor_db_api/blob/main/create_db.sql}{ce lien} sur le service Azure Database for PostgreSQL de Microsoft Azure. 
     Pour plus de sécurité, la base de données a été paramétrée de sorte à n'autoriser l'accès qu'à une adresse IP spécifique, où est déployée notre API.
 
     \subsection{API}
 
     L'API est elle aussi déployée sur Microsoft Azure, plus spécifiquement sur le service \textbf{Azure Web App}. Le déploiement est automatisé grâce à GitHub Actions afin que les mises à jour apportées au code soient automatiquement déployées sur Azure.
-    Comme nous l'avons vu, l'API a besoin de définir une clé secrète pour fonctionner. Cependant, il est impossible d'inclure cette clé dans notre code pour des raisons évidentes : celle-ci serait visible de tous sur notre dépôt GitHub ! Pour régler ce problème, on utilisera des secrets GitHub. Cette fonctionnalité de GitHub nous permet de créer des valeurs secrètes lieés à notre dépôt mais dont la valeur est cachée. On peut ensuite ajouter les lignes suivantes au fichier YAML qui gère le pipeline de déploiement de GitHub action : 
+    Comme nous l'avons vu, l'API a besoin de définir une clé secrète pour fonctionner. Cependant, il est impossible d'inclure cette clé dans notre code pour des raisons évidentes : celle-ci serait visible de tous sur notre dépôt GitHub. Pour régler ce problème, on utilisera des secrets GitHub. Cette fonctionnalité de GitHub nous permet de créer des valeurs secrètes lieés à notre dépôt mais dont la valeur est cachée. On peut ensuite ajouter les lignes suivantes au fichier YAML qui gère le pipeline de déploiement de GitHub action : 
     \begin{verbatim}
         - name: Create secret values in environment (APi token and DB password)
         run: |

@@ -1,0 +1,25 @@
+OK Mentionner explicitement les fonctions de test codées dans test_extraction_script et test_api(avec des liens vers GH)
+OK Mentionner brièvement le point de lancement dans le dossier (dans la section "composants du projet"). Dire que c'est le script extract_articles qui s'occupe de la collecte, du nettoyage et de l'aggrégation des données
+
+OK Rédiger le paragraphe qui parle de l'optimisation des requêtes SQL
+OK Ajouter une section "aggrégation des données" entre le nettoyage et le stockage (citer la partie du code qui fait ça dedans avec des liens)
+
+OK Dans la section de stockage des données, dire à quel endroit du script les requêtes sont exécutées et ajouter des liens vers GH
+OK Section "déploiement" : pour la mise en place de la BDD, parler du script create_sql et linker vers lui
+
+- Section "BDD" : parler des règlements RGPD et des mécanismes mis en place pour les respecter
+- Parler des traitements de conformité qui RGPD qui sont exécutés automatiquement sur la BDD et à quelle fréquence (faire un script séparé pour ça)
+
+- Dans la section où il y a le MPD, dire que j'ai suivi la méthode Merise pour la conception de ta BD après avoir défini le contexte, le besoin, les spéc techniques et les résultats attendus. Justifier pourquoi
+- Changer le MPD (il est obsolète au vu des changements que j'ai faits depuis)
+
+- Dire explicitement que l'API est standardisé REST ful, justifier rapidement pourquoi
+- Mettre le lien pour tester l'API
+- API : vérifier que tous les endpoints sont expliqués
+- Dire explicitement quels mécanismes sont mis en place pour que l'utilisateur s'authentifie
+- Ajouter une doc sur comment s'authentifier à l'API et la mentionner dans le dossier
+
+
+- Tout relire et tout remettre en forme
+
+
