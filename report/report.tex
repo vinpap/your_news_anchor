@@ -177,6 +177,7 @@
     
 
     On notera que ces requêtes ne sont en aucun cas utilisées par notre script extract\_articles.py, qui n'a pas accès à la base de données. À la place, le script accède à la base de données en passant par une API que nous allons présenter dans la section suivante. Cette API est définie dans un dépôt séparé, dans un script \textbf{app.py} (\href{https://github.com/vinpap/your_news_anchor_db_api/blob/main/app.py}{lien}). C'est ce script qui exécute les insertions et requêtes SQL présentées dans les annexes.
+    
     \subsection{Accès aux données et API}
     
     Afin de simplifier l'accès aux données, une API a été développée pour exposer la base de données PostgreSQL. Cela nous évite de devoir gérer nous-mêmes les connexions et requêtes SQL dans notre application, et nous permet de mettre en place des sécurités pour contrôler qui accède à nos données et/ou les modifie.
