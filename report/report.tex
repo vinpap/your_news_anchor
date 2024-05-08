@@ -2,12 +2,17 @@
 \usepackage[T1]{fontenc}
 \usepackage{fullpage}
 \usepackage{babel}
-\usepackage{hyperref}
+
 \usepackage{graphicx}
 \usepackage[justification=centering]{caption}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{spverbatim}
+\usepackage[%  
+    colorlinks=true,
+    pdfborder={0 0 0},
+    linkcolor=red
+]{hyperref}
 
 \hypersetup{
   colorlinks=true,
@@ -143,12 +148,14 @@
 
     \subsection{Stockage des données}
 
-    Toutes les informations extraites (articles et métadonnées) ainsi que la liste des sources d'information à traiter et toutes les autres données nécessaires au fonctionnement de l'application Your News Anchor sont stockées sur une base de données \textbf{PostgreSQL}. Le Modèle Physique de Données qui décrit la structure de notre base de données est présenté dans la figure 3.
+    Toutes les informations extraites (articles et métadonnées) ainsi que la liste des sources d'information à traiter et toutes les autres données nécessaires au fonctionnement de l'application Your News Anchor sont stockées sur une base de données \textbf{PostgreSQL}. Le Modèle Physique de Données qui décrit la structure de notre base de données est présenté dans la figure \ref{fig:mpd}. 
+
 
     \begin{figure}[h]
         \includegraphics[width=12cm]{mpd_e1}
         \centering
-        \caption{MPD de notre base de données}
+        \caption{MPD de notre base de données. Ce MPD a été réalisé en suivant la méthode MERISE, une méthode de conception qui formalise la conception de systèmes informatiques. Ici, nous appliquons cette méthode pour modéliser les différentes tables de notre base de données et les relations qui les lient. Cette méthode a été choisie car elle nous permet de nous assurer que notre base de données est cohérente et répond bien aux besoins de notre application.}
+        \label{fig:mpd}
         \centering
     \end{figure}
 
