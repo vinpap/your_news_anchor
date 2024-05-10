@@ -187,14 +187,24 @@
     
     \subsection{Accès aux données et API}
     
-    Afin de simplifier l'accès aux données, une API a été développée pour exposer la base de données PostgreSQL. Cela nous évite de devoir gérer nous-mêmes les connexions et requêtes SQL dans notre application, et nous permet de mettre en place des sécurités pour contrôler qui accède à nos données et/ou les modifie.
-    L'API a été développée à l'aide de \textbf{\href{https://fastapi.tiangolo.com/}{FastAPI}}, un framework Python destiné à développer rapidement des API REST performantes. Cette API propose deux endpoints pertinents dans le cadre de notre dossier :
+    Afin de simplifier l'accès aux données, une API (disponible à l'adresse \href{https://vincent-your-news-anchor.azurewebsites.net/doc}{vincent-your-news-anchor.azurewebsites.net}) a été développée pour exposer la base de données PostgreSQL. Cela nous évite de devoir gérer nous-mêmes les connexions et requêtes SQL dans notre application, et nous permet de mettre en place des sécurités pour contrôler qui accède à nos données et/ou les modifie. L'API développée ici est une \textbf{API REST} (pour \textit{REpresentational State Transfer}). Une API REST est une API qui répond à un certain nombre de contraintes de conception qui sont respectées ici : communication entre un client et un serveur, pas de stockage d'information par le serveur entre deux requêtes (chaque requête contient à elle seule toutes les informations nécessaires pour que le serveur la traite), interface de communication uniforme...
+    L'API a été développée à l'aide de \textbf{\href{https://fastapi.tiangolo.com/}{FastAPI}}, un framework Python destiné à développer rapidement des API REST performantes. Cette API propose trois endpoints :
     \begin{itemize}
-        \item \textbf{/feeds}, qui permet de récupérer (mais pas de modifier) le contenu de la table 'sources'
+        \item \textbf{/feeds}, qui permet de récupérer tous les flux RSS disponibles pour un utilisateur spécifié. Cela inclut tous les flux RSS standards ainsi que les flux enregistrés par l'utilisateur en question
+        \item \textbf{/all\_feeds}, qui renvoie une liste de tous les flux RSS enregistrés dans la base de données. Cette liste contient les flux RSS standards ainsi que tous les flux enregistrés par les utilisateurs
         \item \textbf{/update\_articles}, qui sert à renouveler entièrement le contenu de la table 'daily\_articles'. Cette opération implique d'effacer le contenu existant de la table pour le remplacer par les données envoyées dans un objet JSON joint à la requête.
     \end{itemize}
 
-    Dans la mesure où la requête envoyée à ce deuxième endpoint supprime des données, il a fallu sécuriser l'accès à la base de données. Dans ce but, une clé d'API secrète doit étre envoyée avec la requête. Cette clé est stockée dans une variable d'environnement afin de ne pas être visible "en clair" sur un dépôt GitHub, par exemple. Plus d'informations sont disponibles dans la section consacrée au déploiement du projet.
+    Il a également fallu sécuriser l'accès à l'API, notamment pour éviter qu'un utilisateur ne supprime la totalité des articles enregistrés via l'endpoint /update\_articles, par exemple. Dans ce but, une clé d'API secrète doit être envoyée avec chaque requête. Commune à tous les utilisateurs, cette clé secrète est définie dans une variable d'environnement sur le serveur où est exécutée l'API. Il revient aux administrateurs de l'API de communiquer cette clé aux utilisateurs autorisés uniquement, et de régulièrement la changer pour plus de sécurité. \textbf{Toute requête ne contenant pas cette clé sera rejetée par l'API}.
+
+
+
+    \textbf{Exemple} : un utilisateur souhaite faire appel à notre API pour récupérer la liste de tous les flux RSS stockés dans la base de données. Il doit réaliser les actions suivantes :
+    \begin{itemize}
+        \item Contacter les administrateurs de l'API pour leur demander la clé secrète. Les administrateurs étudient la demande et renvoient la clé secrète de l'API à l'utilisateur (ou non)
+        \item L'utilisateur effectue une requête POST au point de terminaison /all\_feeds comme ceci. Dans le corps de la requête, il spécifie la clé secrète transmise par les administrateurs, en lui donnant le nom "secret\_token"
+        \item Après avoir traité la requête, l'API renvoie la liste des flux RSS en format JSON (un \hyperref[img:screenshot_api_result]{exemple} est présenté dans les captures d'écran des annexes).
+    \end{itemize}
 
     \section{Tests et intégration continue}
     Afin de garantir la qualité du code et de s'assurer que ni notre script extract\_articles.py ni le script de notre API app.py ne vont cesser de fonctionner, plusieurs mesures ont été prises :
@@ -243,6 +253,7 @@
         \caption{Notre base de données PostgreSQL stocke une liste de flux RSS à utiliser pour récupérer les adresses web d'articles de journaux. Cette capture d'écran montre la table 'standard\_sources' qui contient une liste de flux RSS disponibles pour tous les utilisateurs, mais ces derniers peuvent aussi ajouter leur propre liste de flux RSS qui seront stockés dans la table 'user\_sources'.}
         \centering
     \end{figure}
+    \label{img:screenshot_api_result}
     \begin{figure}[h!]
         \includegraphics[width=12cm]{api_1}
         \centering
